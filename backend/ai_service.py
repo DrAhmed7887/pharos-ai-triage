@@ -1,0 +1,61 @@
+import os
+import json
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class AIService:
+    def __init__(self):
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            print("Warning: GEMINI_API_KEY not found in environment variables.")
+            self.model = None
+        else:
+            genai.configure(api_key=api_key)
+            self.model = genai.GenerativeModel('gemini-2.5-flash')
+
+    def analyze_triage(self, patient_data: dict):
+        if not self.model:
+            return {
+                "error": "AI Service not configured (Missing API Key). Using Standard Protocol.",
+                "triage_level": 3, # Default fallback
+                "reasoning": "AI unavailable.",
+                "reasoning_ar": "الذكاء الاصطناعي غير متوفر.",
+                "red_flags": []
+            }
+
+        prompt = f"""
+        You are an expert ER doctor in an Egyptian hospital. Analyze the patient and respond in JSON only.
+        
+        Patient Data:
+        Age: {patient_data.get('age')}
+        Gender: {patient_data.get('gender')}
+        Complaint: {patient_data.get('chief_complaint_text')}
+        Vitals: {json.dumps(patient_data.get('vitals'))}
+        
+        Format Requirement:
+        {{
+            "symptoms": ["list of extracted symptoms"],
+            "severity": "mild/moderate/severe",
+            "red_flags": ["list any red flags or empty array"],
+            "triage_level": 1-5 (Integer),
+            "reasoning": "brief clinical reasoning in English",
+            "reasoning_ar": "التفسير السريري بالعربي",
+            "followup_question": "single most important question to ask patient",
+            "followup_question_ar": "السؤال بالعربي"
+        }}
+        """
+
+        try:
+            response = self.model.generate_content(prompt)
+            # Clean response if it contains markdown code blocks
+            text = response.text.replace("```json", "").replace("```", "").strip()
+            return json.loads(text)
+        except Exception as e:
+            print(f"AI Error: {e}")
+            return {
+                "error": "AI Analysis Failed",
+                "reasoning": "AI Service error. Please use standard protocol.",
+                 "reasoning_ar": "خطأ في خدمة الذكاء الاصطناعي."
+            }
