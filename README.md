@@ -18,6 +18,7 @@ PHAROS-AI (Patient Health Assessment & Risk-Ordered Sorting) is a clinical decis
 - **📊 5-Level ESI Triage**: Standard emergency severity classification
 - **🚨 Red Flag Detection**: Automatic identification of critical symptoms
 - **📱 Responsive UI**: Works on desktop and mobile
+- **💾 Patient History**: SQLite database with clickable patient records
 
 ## 🏗️ Tech Stack
 
@@ -26,6 +27,7 @@ PHAROS-AI (Patient Health Assessment & Risk-Ordered Sorting) is a clinical decis
 | Frontend | React + Vite + Tailwind CSS |
 | Backend | Python + FastAPI |
 | AI | Google Gemini 2.5 Flash |
+| Database | SQLite |
 | Triage Logic | ESI v5 Algorithm |
 
 ## 🚀 Quick Start
@@ -41,6 +43,7 @@ cd backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+pip install uvicorn
 
 # Add your API key
 echo 'GEMINI_API_KEY=your_key_here' > .env
