@@ -6,6 +6,47 @@ import { Activity, ClipboardList } from 'lucide-react';
 
 function App() {
   const [currentResult, setCurrentResult] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Handle data from TriageForm (contains { result, input })
+  const handleResult = (data) => {
+    // Determine structure
+    const result = data.result || data;
+    const input = data.input || {};
+
+    // 1. Update UI
+    setCurrentResult(result);
+
+    // 2. Save to LocalStorage if input data is present
+    if (data.input) {
+      const newRecord = {
+        id: Date.now(),
+        created_at: new Date().toISOString(),
+        name: "Anonymous",
+        age: input.age,
+        gender: input.gender,
+        chief_complaint: input.chief_complaint_text, // Ensure mapping matches TriageForm state
+        vitals: input.vitals,
+        triage_level: result.level,
+        triage_color: result.color_code,
+        triage_label_en: result.label_en,
+        triage_label_ar: result.label_ar,
+        triage_reasoning: result.reasoning,
+        triage_red_flags: result.red_flags,
+        ai_data: result.ai_data
+      };
+
+      try {
+        const existing = JSON.parse(localStorage.getItem('triageHistory') || '[]');
+        const updated = [newRecord, ...existing];
+        localStorage.setItem('triageHistory', JSON.stringify(updated));
+        // Trigger Sidebar Refresh
+        setRefreshTrigger(prev => prev + 1);
+      } catch (e) {
+        console.error("Storage Error", e);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans" dir="ltr">
@@ -37,7 +78,7 @@ function App() {
           {/* Left Column: Triage Interface */}
           <div className="lg:col-span-2">
             {!currentResult ? (
-              <TriageForm onResult={setCurrentResult} />
+              <TriageForm onResult={handleResult} />
             ) : (
               <TriageResult result={currentResult} onReset={() => setCurrentResult(null)} />
             )}
@@ -45,7 +86,7 @@ function App() {
 
           {/* Right Column: Live Dashboard */}
           <div className="lg:col-span-1">
-            <PatientList />
+            <PatientList refreshTrigger={refreshTrigger} />
           </div>
         </div>
       </main>

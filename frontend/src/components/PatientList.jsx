@@ -1,32 +1,68 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Users, Clock, AlertTriangle, Eye, X, Activity } from 'lucide-react';
+import { Users, RotateCw, AlertTriangle, Eye, X, Activity, Download, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-export default function PatientList() {
+export default function PatientList({ refreshTrigger = 0 }) {
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [showAll, setShowAll] = useState(false);
 
-    const fetchPatients = async () => {
+    const loadPatients = () => {
+        setLoading(true);
         try {
-            const res = await axios.get(`${API_URL}/patients?limit=${showAll ? 100 : 10}`);
-            setPatients(res.data);
+            const stored = JSON.parse(localStorage.getItem('triageHistory') || '[]');
+            // If showAll is false, limit to 10
+            setPatients(showAll ? stored : stored.slice(0, 10));
         } catch (err) {
-            console.error("Failed to fetch patients", err);
+            console.error("Failed to load history", err);
         } finally {
             setLoading(false);
         }
     };
 
+    const clearHistory = () => {
+        if (window.confirm("Are you sure you want to clear all history? This cannot be undone.")) {
+            localStorage.removeItem('triageHistory');
+            loadPatients();
+        }
+    };
+
+    const exportCSV = () => {
+        const stored = JSON.parse(localStorage.getItem('triageHistory') || '[]');
+        if (!stored.length) return;
+
+        // Simple flatten for CSV
+        const headers = ["ID", "Date", "Age", "Gender", "Complaint", "Level", "Label", "RedFlags"];
+        const rows = stored.map(p => [
+            p.id,
+            p.created_at,
+            p.age,
+            p.gender,
+            `"${(p.chief_complaint || '').replace(/"/g, '""')}"`, // Escape quotes
+            p.triage_level,
+            p.triage_label_en,
+            `"${(p.triage_red_flags || []).join(';')}"`
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(r => r.join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `triage_export_${new Date().toISOString()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     useEffect(() => {
-        fetchPatients();
-        const interval = setInterval(fetchPatients, 5000);
-        return () => clearInterval(interval);
-    }, [showAll]);
+        loadPatients();
+    }, [refreshTrigger, showAll]);
 
     const getLevelColor = (level) => {
         switch (level) {
@@ -42,28 +78,40 @@ export default function PatientList() {
     return (
         <>
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full max-h-[800px]">
-                <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between sticky top-0 z-10">
-                    <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-slate-700 flex items-center gap-2">
-                            <Users className="w-4 h-4" /> {showAll ? 'All History' : 'Recent'}
-                        </h3>
-                        <button onClick={fetchPatients} className="text-slate-400 hover:text-blue-600 transition-colors" title="Refresh List">
-                            <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-600' : ''}`} />
+                <div className="p-4 border-b border-slate-100 bg-slate-50 flex flex-col gap-3 sticky top-0 z-10">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-slate-700 flex items-center gap-2">
+                                <Users className="w-4 h-4" /> {showAll ? 'All History' : 'Recent'}
+                            </h3>
+                            <button onClick={loadPatients} className="text-slate-400 hover:text-blue-600 transition-colors" title="Reload">
+                                <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-600' : ''}`} />
+                            </button>
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={exportCSV} className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 flex items-center gap-1 border border-blue-100" title="Download CSV">
+                                <Download className="w-3 h-3" /> Export
+                            </button>
+                            <button onClick={clearHistory} className="text-[10px] bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100 flex items-center gap-1 border border-red-100" title="Clear All">
+                                <Trash2 className="w-3 h-3" /> Clear
+                            </button>
+                        </div>
+                    </div>
+                    <div className="flex justify-end">
+                        <button
+                            onClick={() => setShowAll(!showAll)}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium underline"
+                        >
+                            {showAll ? 'Show Recent' : 'View All History'}
                         </button>
                     </div>
-                    <button
-                        onClick={() => setShowAll(!showAll)}
-                        className="text-xs text-blue-600 hover:text-blue-800 font-medium underline"
-                    >
-                        {showAll ? 'Show Recent' : 'View All'}
-                    </button>
                 </div>
 
                 <div className="overflow-y-auto flex-1 divide-y divide-slate-100">
                     {loading && <div className="p-4 text-center text-sm text-slate-500">Loading...</div>}
 
                     {!loading && patients.length === 0 && (
-                        <div className="p-8 text-center text-slate-400 text-sm">No patients recorded yet.</div>
+                        <div className="p-8 text-center text-slate-400 text-sm">No history found.</div>
                     )}
 
                     {patients.map(patient => (
@@ -178,6 +226,15 @@ export default function PatientList() {
                                                 </div>
                                             ))}
                                         </div>
+
+                                        {/* AI Extra Data */}
+                                        {selectedPatient.ai_data && (
+                                            <div className="mt-2 block p-3 bg-purple-50 rounded-lg border border-purple-100 text-xs">
+                                                <div className="font-bold text-purple-700 mb-1">AI Insights:</div>
+                                                <div className="font-arabic text-right text-purple-900 mb-1">{selectedPatient.ai_data.reasoning_ar}</div>
+                                                <div className="text-purple-600">Q: {selectedPatient.ai_data.followup_question}</div>
+                                            </div>
+                                        )}
 
                                         {selectedPatient.triage_red_flags?.length > 0 && (
                                             <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-100">

@@ -13,19 +13,8 @@ def run_test(name, data, expected_level_range):
             level = result['level']
             print(f"Result Level: {level}")
             
-            # Verify Persistence
-            # Adding a small delay to ensure DB commit needs aren't racing (though endpoints are sync)
-            time.sleep(0.5)
-            try:
-                db_check = requests.get(BASE_URL.replace("/triage", "/patients"))
-                patients = db_check.json()
-                if len(patients) > 0 and patients[0]['triage_level'] == level:
-                     print("✅ DB Persistence Verified")
-                else:
-                     print("⚠️ DB Verification Warning: Patient might not be top of list")
-            except:
-                print("❌ DB Check Failed")
-
+            # DB Persistence check skipped (Client-Side Storage)
+            
             if level in expected_level_range:
                 print("✅ PASS")
             else:

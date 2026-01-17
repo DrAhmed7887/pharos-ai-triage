@@ -60,7 +60,8 @@ export default function TriageForm({ onResult }) {
 
             const endpoint = useAI ? `${API_URL}/ai-triage` : `${API_URL}/triage`;
             const res = await axios.post(endpoint, payload);
-            onResult({ ...res.data, isAI: useAI });
+            // Pass both result and input payload for local storage
+            onResult({ result: { ...res.data, isAI: useAI }, input: payload });
         } catch (err) {
             console.error(err);
             setError("Failed to process triage request. Ensure backend is running.");

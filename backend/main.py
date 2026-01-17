@@ -37,23 +37,23 @@ def triage_patient(patient: PatientInput, db: Session = Depends(get_db)):
         # 1. Run Logic
         result = engine_logic.evaluate(patient)
         
-        # 2. Persist to DB
-        db_patient = Patient(
-            name="Anonymous", # Update if name field added to input
-            age=patient.age,
-            gender=patient.gender.value,
-            vitals=patient.vitals.model_dump(),
-            chief_complaint=patient.chief_complaint_text,
-            triage_level=result.level,
-            triage_color=result.color_code,
-            triage_label_en=result.label_en,
-            triage_label_ar=result.label_ar,
-            triage_reasoning=result.reasoning,
-            triage_red_flags=result.red_flags
-        )
-        db.add(db_patient)
-        db.commit()
-        db.refresh(db_patient)
+        # 2. Persist to DB (Disabled for Client-Side Storage)
+        # db_patient = Patient(
+        #     name="Anonymous", 
+        #     age=patient.age,
+        #     gender=patient.gender.value,
+        #     vitals=patient.vitals.model_dump(),
+        #     chief_complaint=patient.chief_complaint_text,
+        #     triage_level=result.level,
+        #     triage_color=result.color_code,
+        #     triage_label_en=result.label_en,
+        #     triage_label_ar=result.label_ar,
+        #     triage_reasoning=result.reasoning,
+        #     triage_red_flags=result.red_flags
+        # )
+        # db.add(db_patient)
+        # db.commit()
+        # db.refresh(db_patient)
         
         return result
     except Exception as e:
@@ -104,22 +104,22 @@ def ai_triage_patient(patient: PatientInput, db: Session = Depends(get_db)):
             "confidence": "AI-Generated"
         }
 
-        # Persist (marking as AI)
-        db_patient = Patient(
-            name="Anonymous (AI)", 
-            age=patient.age,
-            gender=patient.gender.value,
-            vitals=patient.vitals.model_dump(),
-            chief_complaint=patient.chief_complaint_text,
-            triage_level=level,
-            triage_color=final_response["color_code"],
-            triage_label_en=final_response["label_en"],
-            triage_label_ar=final_response["label_ar"],
-            triage_reasoning=final_response["reasoning"],
-            triage_red_flags=final_response["red_flags"]
-        )
-        db.add(db_patient)
-        db.commit()
+        # Persist (Disabled for Client-Side Storage)
+        # db_patient = Patient(
+        #     name="Anonymous (AI)", 
+        #     age=patient.age,
+        #     gender=patient.gender.value,
+        #     vitals=patient.vitals.model_dump(),
+        #     chief_complaint=patient.chief_complaint_text,
+        #     triage_level=level,
+        #     triage_color=final_response["color_code"],
+        #     triage_label_en=final_response["label_en"],
+        #     triage_label_ar=final_response["label_ar"],
+        #     triage_reasoning=final_response["reasoning"],
+        #     triage_red_flags=final_response["red_flags"]
+        # )
+        # db.add(db_patient)
+        # db.commit()
         
         return final_response
 
