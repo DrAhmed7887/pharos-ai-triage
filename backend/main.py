@@ -18,7 +18,7 @@ app = FastAPI(title="Egypt AI Triage System", version="1.0.0")
 # CORS Setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # For dev only
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
