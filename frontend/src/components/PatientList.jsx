@@ -43,14 +43,19 @@ export default function PatientList() {
         <>
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full max-h-[800px]">
                 <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between sticky top-0 z-10">
-                    <h3 className="font-semibold text-slate-700 flex items-center gap-2">
-                        <Users className="w-4 h-4" /> {showAll ? 'All Patients History' : 'Recent Patients'}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-slate-700 flex items-center gap-2">
+                            <Users className="w-4 h-4" /> {showAll ? 'All History' : 'Recent'}
+                        </h3>
+                        <button onClick={fetchPatients} className="text-slate-400 hover:text-blue-600 transition-colors" title="Refresh List">
+                            <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-600' : ''}`} />
+                        </button>
+                    </div>
                     <button
                         onClick={() => setShowAll(!showAll)}
                         className="text-xs text-blue-600 hover:text-blue-800 font-medium underline"
                     >
-                        {showAll ? 'Show Recent Only' : 'View All History'}
+                        {showAll ? 'Show Recent' : 'View All'}
                     </button>
                 </div>
 
