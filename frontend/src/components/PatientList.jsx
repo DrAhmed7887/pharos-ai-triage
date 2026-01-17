@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Users, Clock, AlertTriangle, Eye, X, Activity } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export default function PatientList() {
     const [patients, setPatients] = useState([]);
