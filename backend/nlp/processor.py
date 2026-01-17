@@ -1,4 +1,5 @@
 from typing import List, Dict
+import re
 
 class NLPProcessor:
     def __init__(self):
@@ -50,9 +51,9 @@ class NLPProcessor:
         
         for category, keywords in self.concepts.items():
             for kw in keywords:
-                if kw in text:
-                    # Very basic negation check: look back 3 words? 
-                    # For MVP, we'll assume presence = positive finding to err on side of caution (triage safety)
+                # Use regex with word boundary at the start to avoid partial matches
+                # e.g. "instability" should not match "stab"
+                if re.search(r'\b' + re.escape(kw), text):
                     detected.append(category)
                     break
         
@@ -70,7 +71,7 @@ class NLPProcessor:
         matches = []
         text = text.lower()
         for term in danger_terms:
-            if term in text:
+            if re.search(r'\b' + re.escape(term), text):
                 matches.append(term)
                 
         return matches
