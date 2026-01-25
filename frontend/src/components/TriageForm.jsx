@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Mic, AlertCircle, ChevronRight, Activity } from 'lucide-react';
+import { AlertCircle, ChevronRight, Activity } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -118,10 +118,7 @@ export default function TriageForm({ onResult }) {
 
                 {/* Complaint */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1 flex justify-between">
-                        <span>Chief Complaint / الشكوى الرئيسية</span>
-                        <span className="text-xs text-blue-600 font-normal flex items-center cursor-pointer hover:underline"><Mic className="w-3 h-3 mr-1" /> Voice Input (Soon)</span>
-                    </label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Chief Complaint / الشكوى الرئيسية</label>
                     <textarea
                         required
                         value={formData.chief_complaint_text}
