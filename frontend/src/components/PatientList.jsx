@@ -8,12 +8,24 @@ export default function PatientList({ refreshTrigger = 0 }) {
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [showAll, setShowAll] = useState(false);
 
+    const [searchTerm, setSearchTerm] = useState('');
+
     const loadPatients = () => {
         setLoading(true);
         try {
-            const stored = JSON.parse(localStorage.getItem('triageHistory') || '[]');
-            // If showAll is false, limit to 10
-            setPatients(showAll ? stored : stored.slice(0, 10));
+            let stored = JSON.parse(localStorage.getItem('triageHistory') || '[]');
+
+            // Filter by search term
+            if (searchTerm) {
+                const lowerTerm = searchTerm.toLowerCase();
+                stored = stored.filter(p =>
+                    (p.name && p.name.toLowerCase().includes(lowerTerm)) ||
+                    (p.id && String(p.id).toLowerCase().includes(lowerTerm))
+                );
+            }
+
+            // If showAll is false, limit to 10 (unless searching)
+            setPatients((showAll || searchTerm) ? stored : stored.slice(0, 10));
         } catch (err) {
             console.error("Failed to load history", err);
         } finally {
@@ -33,9 +45,10 @@ export default function PatientList({ refreshTrigger = 0 }) {
         if (!stored.length) return;
 
         // Simple flatten for CSV
-        const headers = ["ID", "Date", "Age", "Gender", "Complaint", "Level", "Label", "RedFlags"];
+        const headers = ["ID", "Name", "Date", "Age", "Gender", "Complaint", "Level", "Label", "RedFlags"];
         const rows = stored.map(p => [
             p.id,
+            `"${p.name || 'Anonymous'}"`,
             p.created_at,
             p.age,
             p.gender,
@@ -62,7 +75,7 @@ export default function PatientList({ refreshTrigger = 0 }) {
 
     useEffect(() => {
         loadPatients();
-    }, [refreshTrigger, showAll]);
+    }, [refreshTrigger, showAll, searchTerm]);
 
     const getLevelColor = (level) => {
         switch (level) {
@@ -97,6 +110,18 @@ export default function PatientList({ refreshTrigger = 0 }) {
                             </button>
                         </div>
                     </div>
+
+                    {/* Search Bar */}
+                    <div>
+                        <input
+                            type="text"
+                            placeholder="Search by Name or ID..."
+                            className="w-full text-xs p-2 rounded border border-slate-200 focus:border-blue-500 focus:outline-none"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
                     <div className="flex justify-end">
                         <button
                             onClick={() => setShowAll(!showAll)}
@@ -123,11 +148,19 @@ export default function PatientList({ refreshTrigger = 0 }) {
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
                                     <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase border ${getLevelColor(patient.triage_level)}`}>
-                                        Level {patient.triage_level}
+                                        {patient.triage_level}
                                     </span>
-                                    <span className="text-sm font-medium text-slate-900">
-                                        {patient.gender === 'male' ? 'M' : 'F'} / {Math.round(patient.age)}y
-                                    </span>
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-bold text-slate-900">
+                                            {patient.name || 'Anonymous'}
+                                        </span>
+                                        <span className="text-[10px] font-mono text-slate-400">
+                                            {patient.id}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-slate-500">
+                                    <span>{patient.gender === 'male' ? 'M' : 'F'} / {Math.round(patient.age)}y</span>
                                 </div>
                                 <p className="text-xs text-slate-500 line-clamp-1 max-w-[180px]" title={patient.chief_complaint}>
                                     {patient.chief_complaint}

@@ -9,6 +9,7 @@ export default function TriageForm({ onResult }) {
         age: '',
         gender: 'male',
         chief_complaint_text: '',
+        clinical_photo: null,
         vitals: {
             hr: '',
             rr: '',
@@ -36,6 +37,17 @@ export default function TriageForm({ onResult }) {
             ...prev,
             vitals: { ...prev.vitals, [name]: value ? parseFloat(value) : '' }
         }));
+    };
+
+    const handlePhotoUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData(prev => ({ ...prev, clinical_photo: reader.result }));
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -130,6 +142,39 @@ export default function TriageForm({ onResult }) {
                         placeholder="Describe symptoms here... (e.g. 'Severe chest pain radiating to left arm' or 'عندي ألم في صدري')"
                         dir="auto"
                     />
+                </div>
+
+                {/* Clinical Photo */}
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Clinical Photo / صورة سريرية (Optional)</label>
+                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md cursor-pointer hover:bg-slate-50 transition-colors relative">
+                        <div className="space-y-1 text-center">
+                            {formData.clinical_photo ? (
+                                <div className="relative">
+                                    <img src={formData.clinical_photo} alt="Clinical" className="mx-auto h-48 object-contain rounded" />
+                                    <button
+                                        type="button"
+                                        onClick={(e) => { e.preventDefault(); setFormData({ ...formData, clinical_photo: null }); }}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                    >
+                                        <Activity className="w-4 h-4 transform rotate-45" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <Activity className="mx-auto h-12 w-12 text-slate-400" />
+                                    <div className="flex text-sm text-slate-600 justify-center">
+                                        <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                            <span>Upload a file</span>
+                                            <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handlePhotoUpload} />
+                                        </label>
+                                        <p className="pl-1">or drag and drop</p>
+                                    </div>
+                                    <p className="text-xs text-slate-500">PNG, JPG, GIF up to 5MB</p>
+                                </>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Vitals */}
