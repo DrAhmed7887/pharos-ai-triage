@@ -1,4 +1,4 @@
-# 🏥 PHAROS-AI: Emergency Triage System
+# 🏥 SAFE-Triage AI: Emergency Triage System
 
 **AI-powered Emergency Department Triage System for Egyptian Hospitals**
 
@@ -8,7 +8,7 @@
 
 ## 🌟 Overview
 
-PHAROS-AI (Patient Health Assessment & Risk-Ordered Sorting) is a clinical decision support tool that uses AI to assist emergency department triage. Built for Egyptian hospitals, it supports both Arabic and English input.
+SAFE-Triage AI (Smart Assessment for Emergency Triage) is a clinical decision support tool that uses AI to assist emergency department triage. Built for Egyptian hospitals, it supports both Arabic and English input.
 
 ## ✨ Features
 

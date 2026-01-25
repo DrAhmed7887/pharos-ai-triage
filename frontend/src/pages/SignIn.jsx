@@ -30,7 +30,7 @@ export default function SignIn() {
                         <Activity className="h-8 w-8 text-white" />
                     </div>
                     <h2 className="mt-6 text-3xl font-extrabold text-slate-900">
-                        Sign in to Triage AI
+                        Sign in to SAFE-Triage AI
                     </h2>
                     <p className="mt-2 text-sm text-slate-600">
                         Or{' '}

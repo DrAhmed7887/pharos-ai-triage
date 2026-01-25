@@ -59,7 +59,7 @@ export default function Dashboard() {
                             <Activity className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold text-slate-900">ER Triage AI</h1>
+                            <h1 className="text-xl font-bold text-slate-900">SAFE-Triage AI</h1>
                             <p className="text-xs text-slate-500">
                                 Logged in as: <span className="font-semibold">{user?.name} ({user?.role})</span>
                             </p>
