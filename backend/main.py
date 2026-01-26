@@ -1,7 +1,9 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
+import tempfile
+import os
 
 from .models import PatientInput, TriageResult
 from .logic.triage_engine import TriageEngine
@@ -9,11 +11,12 @@ from .database import engine, Base, get_db
 from .sql_models import Patient
 import uvicorn
 from .ai_service import AIService
+from .medasr_service import medasr_service
 
 # Create Tables
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Egypt AI Triage System", version="1.0.0")
+app = FastAPI(title="SAFE-Triage AI System", version="2.0.0")
 
 # CORS Setup
 app.add_middleware(
@@ -29,32 +32,31 @@ ai_service = AIService()
 
 @app.get("/")
 def read_root():
-    return {"message": "AI Triage System API Active"}
+    return {"message": "SAFE-Triage AI System Active", "version": "2.0.0", "features": ["MedASR Voice", "AI Triage", "ESI v5"]}
+
+@app.post("/transcribe")
+async def transcribe_audio(audio: UploadFile = File(...)):
+    """🎤 MedASR: Convert voice to medical text"""
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+            content = await audio.read()
+            tmp.write(content)
+            tmp_path = tmp.name
+        
+        result = medasr_service.transcribe(tmp_path)
+        os.unlink(tmp_path)
+        
+        if result["success"]:
+            return {"success": True, "transcription": result["transcription"]}
+        else:
+            raise HTTPException(status_code=500, detail=result["error"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/triage", response_model=TriageResult)
 def triage_patient(patient: PatientInput, db: Session = Depends(get_db)):
     try:
-        # 1. Run Logic
         result = engine_logic.evaluate(patient)
-        
-        # 2. Persist to DB (Disabled for Client-Side Storage)
-        # db_patient = Patient(
-        #     name="Anonymous", 
-        #     age=patient.age,
-        #     gender=patient.gender.value,
-        #     vitals=patient.vitals.model_dump(),
-        #     chief_complaint=patient.chief_complaint_text,
-        #     triage_level=result.level,
-        #     triage_color=result.color_code,
-        #     triage_label_en=result.label_en,
-        #     triage_label_ar=result.label_ar,
-        #     triage_reasoning=result.reasoning,
-        #     triage_red_flags=result.red_flags
-        # )
-        # db.add(db_patient)
-        # db.commit()
-        # db.refresh(db_patient)
-        
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -62,12 +64,9 @@ def triage_patient(patient: PatientInput, db: Session = Depends(get_db)):
 @app.post("/ai-triage")
 def ai_triage_patient(patient: PatientInput, db: Session = Depends(get_db)):
     try:
-        # 1. AI Analysis
         ai_result = ai_service.analyze_triage(patient.model_dump())
         
-        # Fallback if AI fails
         if "error" in ai_result:
-             # Fallback to standard logic if AI fails
              std_result = engine_logic.evaluate(patient)
              return {
                  "level": std_result.level,
@@ -79,13 +78,12 @@ def ai_triage_patient(patient: PatientInput, db: Session = Depends(get_db)):
                  "ai_data": None
              }
 
-        # Map AI Level to Color/Label
         level = ai_result.get("triage_level", 3)
         colors = {1:"#ef4444", 2:"#f97316", 3:"#eab308", 4:"#22c55e", 5:"#3b82f6"}
         labels_en = {1:"Resuscitation", 2:"Emergent", 3:"Urgent", 4:"Less Urgent", 5:"Non-Urgent"}
         labels_ar = {1:"إنعاش", 2:"طوارئ", 3:"عاجل", 4:"أقل إلحاحاً", 5:"غير عاجل"}
 
-        final_response = {
+        return {
             "level": level,
             "color_code": colors.get(level, "#eab308"),
             "label_en": f"{labels_en.get(level)} (Level {level})",
@@ -103,26 +101,6 @@ def ai_triage_patient(patient: PatientInput, db: Session = Depends(get_db)):
             },
             "confidence": "AI-Generated"
         }
-
-        # Persist (Disabled for Client-Side Storage)
-        # db_patient = Patient(
-        #     name="Anonymous (AI)", 
-        #     age=patient.age,
-        #     gender=patient.gender.value,
-        #     vitals=patient.vitals.model_dump(),
-        #     chief_complaint=patient.chief_complaint_text,
-        #     triage_level=level,
-        #     triage_color=final_response["color_code"],
-        #     triage_label_en=final_response["label_en"],
-        #     triage_label_ar=final_response["label_ar"],
-        #     triage_reasoning=final_response["reasoning"],
-        #     triage_red_flags=final_response["red_flags"]
-        # )
-        # db.add(db_patient)
-        # db.commit()
-        
-        return final_response
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
