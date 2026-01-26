@@ -17,7 +17,7 @@ class MedASRService:
         try:
             print(f"[MedASR] Transcribing: {audio_path}")
             result = self.client.predict(
-                audio=handle_file(audio_path),
+                handle_file(audio_path),
                 api_name="/transcribe"
             )
             print(f"[MedASR] Result: {result}")
