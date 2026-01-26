@@ -1,7 +1,8 @@
 fastapi
 uvicorn
 sqlalchemy
-google-generativeai
+pydantic
 python-dotenv
-requests
+google-generativeai
 python-multipart
+requests

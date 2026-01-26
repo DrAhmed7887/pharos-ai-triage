@@ -1,45 +1,30 @@
-from transformers import AutoModelForCTC, AutoProcessor
-import torch
-import librosa
-import re
+import requests
+import os
+
+MEDASR_API_URL = "https://drzayed-medasr-api.hf.space/api/predict"
 
 class MedASRService:
     def __init__(self):
-        self.model = None
-        self.processor = None
-        self.loaded = False
-    
-    def load_model(self):
-        if not self.loaded:
-            print("Loading MedASR model...")
-            self.processor = AutoProcessor.from_pretrained("google/medasr", trust_remote_code=True)
-            self.model = AutoModelForCTC.from_pretrained("google/medasr", trust_remote_code=True)
-            self.loaded = True
-            print("✅ MedASR loaded!")
+        self.available = True
     
     def transcribe(self, audio_path: str) -> dict:
         try:
-            self.load_model()
-            speech, sample_rate = librosa.load(audio_path, sr=16000)
-            inputs = self.processor(speech, sampling_rate=sample_rate, return_tensors="pt", padding=True)
-            
-            with torch.no_grad():
-                logits = self.model(**inputs).logits
-                predicted_ids = torch.argmax(logits, dim=-1)
-                raw_text = self.processor.batch_decode(predicted_ids)[0]
-            
-            clean_text = self._clean_transcription(raw_text)
-            return {"success": True, "transcription": clean_text}
+            with open(audio_path, 'rb') as f:
+                # Call Hugging Face Space API
+                response = requests.post(
+                    "https://drzayed-medasr-api.hf.space/call/transcribe",
+                    files={"audio": f}
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    # Gradio returns data in specific format
+                    if "data" in result:
+                        return {"success": True, "transcription": result["data"][0]}
+                    return {"success": True, "transcription": result.get("transcription", "")}
+                else:
+                    return {"success": False, "error": f"API error: {response.status_code}"}
         except Exception as e:
-            return {"success": False, "error": str(e), "transcription": ""}
-    
-    def _clean_transcription(self, text: str) -> str:
-        text = re.sub(r'<epsilon>', '', text)
-        text = re.sub(r'\{[^}]*\}', ' ', text)
-        text = re.sub(r'\[+', '[', text)
-        text = re.sub(r'\]+', ']', text)
-        text = re.sub(r'\s+', ' ', text).strip()
-        text = text.replace('</s>', '')
-        return text
+            return {"success": False, "error": str(e)}
 
 medasr_service = MedASRService()
