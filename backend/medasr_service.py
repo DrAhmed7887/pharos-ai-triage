@@ -15,7 +15,7 @@ class MedASRService:
     def transcribe(self, audio_path: str) -> dict:
         try:
             print(f"[MedASR] Transcribing: {audio_path}")
-            result = self.client.predict(audio=audio_path, api_name="/transcribe")
+            result = self.client.predict(audio_path, api_name="/transcribe")
             print(f"[MedASR] Result: {result}")
             return {"success": True, "transcription": result}
         except Exception as e:
