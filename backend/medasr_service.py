@@ -1,3 +1,5 @@
+from gradio_client import Client, handle_file
+
 class MedASRService:
     def __init__(self):
         self.available = True
@@ -6,7 +8,6 @@ class MedASRService:
     @property
     def client(self):
         if self._client is None:
-            from gradio_client import Client
             print("[MedASR] Connecting to Hugging Face...")
             self._client = Client("DrZayed/medasr-api")
             print("[MedASR] Connected!")
@@ -15,7 +16,10 @@ class MedASRService:
     def transcribe(self, audio_path: str) -> dict:
         try:
             print(f"[MedASR] Transcribing: {audio_path}")
-            result = self.client.predict(audio_path, api_name="/transcribe")
+            result = self.client.predict(
+                audio=handle_file(audio_path),
+                api_name="/transcribe"
+            )
             print(f"[MedASR] Result: {result}")
             return {"success": True, "transcription": result}
         except Exception as e:
