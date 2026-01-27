@@ -103,7 +103,7 @@ export default function TriageForm({ onResult }) {
             <div className="p-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white flex justify-between items-center">
                 <div>
                     <h2 className="text-lg font-bold">SAFE-Triage AI</h2>
-                    <p className="text-blue-100 text-sm">Powered by MedASR + Gemini</p>
+                    <p className="text-blue-100 text-sm">Powered by Gemini AI</p>
                 </div>
                 <div className="flex items-center gap-2 bg-blue-800/50 p-1.5 rounded-lg border border-blue-500/50">
                     <span className={`text-xs font-bold ${!useAI ? 'text-white' : 'text-blue-300'}`}>Standard</span>
@@ -142,7 +142,7 @@ export default function TriageForm({ onResult }) {
                             }`}>
                             {isTranscribing ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Transcribing...</>
                              : isRecording ? <><MicOff className="w-3.5 h-3.5" />Stop</>
-                             : <><Mic className="w-3.5 h-3.5" />MedASR Voice</>}
+                             : <><Mic className="w-3.5 h-3.5" />Voice Input</>}
                         </button>
                     </label>
                     {isRecording && (
@@ -153,8 +153,8 @@ export default function TriageForm({ onResult }) {
                     )}
                     <textarea required value={formData.chief_complaint_text} onChange={e => setFormData({ ...formData, chief_complaint_text: e.target.value })}
                         className="w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 py-2 px-3 border min-h-[100px]"
-                        placeholder="Describe symptoms or click MedASR Voice button above..." dir="auto" />
-                    <p className="text-xs text-slate-500 mt-1">MedASR: Google Health AI for medical speech recognition</p>
+                        placeholder="Describe symptoms or use Voice Input button above..." dir="auto" />
+                    <p className="text-xs text-slate-500 mt-1">Voice transcription powered by Gemini AI (Arabic + English)</p>
                 </div>
 
                 <div className="space-y-4 border-t pt-4">
