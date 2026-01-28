@@ -1,6 +1,7 @@
 """
 SAFE-Triage AI - Critical Scenario Testing
 Tests common ER presentations against expected ESI levels
+Includes Egyptian Arabic (عامية مصرية) scenarios
 """
 import sys
 sys.path.insert(0, '/Users/ahmedzayed/Downloads/safe-triage-project')
@@ -12,7 +13,11 @@ engine = TriageEngine()
 
 # Test scenarios: (description, patient_data, expected_level)
 SCENARIOS = [
-    # ===== LEVEL 1 - RESUSCITATION =====
+    # ========================================
+    # LEVEL 1 - RESUSCITATION (إنعاش)
+    # ========================================
+    
+    # English - Critical Keywords
     ("Unconscious patient", {
         "age": 55, "gender": "male",
         "chief_complaint_text": "unconscious, found on floor",
@@ -37,40 +42,10 @@ SCENARIOS = [
         "vitals": {}
     }, 1),
     
-    ("Severe bradycardia (HR < 40)", {
-        "age": 70, "gender": "male",
-        "chief_complaint_text": "feeling weak",
-        "vitals": {"hr": 35, "rr": 16, "spo2": 95}
-    }, 1),
-    
-    ("Respiratory failure (RR < 8)", {
-        "age": 50, "gender": "female",
-        "chief_complaint_text": "very sleepy after taking pills",
-        "vitals": {"hr": 60, "rr": 4, "spo2": 88}
-    }, 1),
-    
-    ("Severe hypoxia (SpO2 < 90)", {
-        "age": 65, "gender": "male",
-        "chief_complaint_text": "can't breathe",
-        "vitals": {"hr": 110, "rr": 28, "spo2": 85}
-    }, 1),
-    
     ("Active seizure", {
         "age": 25, "gender": "female",
         "chief_complaint_text": "seizure, convulsing now",
         "vitals": {}
-    }, 1),
-    
-    ("Severe tachycardia (HR > 150)", {
-        "age": 45, "gender": "male",
-        "chief_complaint_text": "heart racing, dizzy",
-        "vitals": {"hr": 180, "rr": 22, "spo2": 94}
-    }, 1),
-    
-    ("Shock (SBP < 80)", {
-        "age": 35, "gender": "female",
-        "chief_complaint_text": "bleeding heavily",
-        "vitals": {"hr": 130, "sbp": 70, "dbp": 40}
     }, 1),
     
     ("Gunshot wound", {
@@ -103,7 +78,97 @@ SCENARIOS = [
         "vitals": {}
     }, 1),
     
-    # ===== LEVEL 2 - EMERGENT =====
+    # Critical Vital Signs
+    ("Severe bradycardia (HR < 40)", {
+        "age": 70, "gender": "male",
+        "chief_complaint_text": "feeling weak",
+        "vitals": {"hr": 35, "rr": 16, "spo2": 95}
+    }, 1),
+    
+    ("Respiratory failure (RR < 8)", {
+        "age": 50, "gender": "female",
+        "chief_complaint_text": "very sleepy after taking pills",
+        "vitals": {"hr": 60, "rr": 4, "spo2": 88}
+    }, 1),
+    
+    ("Severe hypoxia (SpO2 < 90)", {
+        "age": 65, "gender": "male",
+        "chief_complaint_text": "can't breathe",
+        "vitals": {"hr": 110, "rr": 28, "spo2": 85}
+    }, 1),
+    
+    ("Severe tachycardia (HR > 150)", {
+        "age": 45, "gender": "male",
+        "chief_complaint_text": "heart racing, dizzy",
+        "vitals": {"hr": 180, "rr": 22, "spo2": 94}
+    }, 1),
+    
+    ("Shock (SBP < 80)", {
+        "age": 35, "gender": "female",
+        "chief_complaint_text": "bleeding heavily",
+        "vitals": {"hr": 130, "sbp": 70, "dbp": 40}
+    }, 1),
+    
+    # Arabic - Critical (فاقد الوعي)
+    ("Arabic - فاقد الوعي", {
+        "age": 50, "gender": "male",
+        "chief_complaint_text": "فاقد الوعي مش بيرد",
+        "vitals": {}
+    }, 1),
+    
+    ("Arabic - مغمى عليه", {
+        "age": 45, "gender": "male",
+        "chief_complaint_text": "مغمى عليه في الشارع",
+        "vitals": {}
+    }, 1),
+    
+    ("Arabic - مش بيتنفس", {
+        "age": 60, "gender": "female",
+        "chief_complaint_text": "نفسه واقف مش بيتنفس",
+        "vitals": {}
+    }, 1),
+    
+    ("Arabic - تشنجات", {
+        "age": 30, "gender": "male",
+        "chief_complaint_text": "بيتشنج على الأرض",
+        "vitals": {}
+    }, 1),
+    
+    ("Arabic - طعن", {
+        "age": 25, "gender": "male",
+        "chief_complaint_text": "اتطعن بسكينة في بطنه",
+        "vitals": {}
+    }, 1),
+    
+    ("Arabic - جرعة زيادة", {
+        "age": 20, "gender": "female",
+        "chief_complaint_text": "بلعت حبوب كتير جرعة زيادة",
+        "vitals": {}
+    }, 1),
+    
+    ("Arabic - شرقان", {
+        "age": 3, "gender": "male",
+        "chief_complaint_text": "الاكل وقف في زوره شرقان",
+        "vitals": {}
+    }, 1),
+    
+    ("Arabic - ضربة شمس", {
+        "age": 40, "gender": "male",
+        "chief_complaint_text": "ضربته الشمس وهو شغال",
+        "vitals": {}
+    }, 1),
+    
+    ("Arabic - نزيف شديد", {
+        "age": 35, "gender": "female",
+        "chief_complaint_text": "بتنزف جامد الدم مش واقف",
+        "vitals": {}
+    }, 1),
+    
+    # ========================================
+    # LEVEL 2 - EMERGENT (طوارئ)
+    # ========================================
+    
+    # English - High Risk
     ("Chest pain - adult", {
         "age": 55, "gender": "male",
         "chief_complaint_text": "severe chest pain radiating to arm",
@@ -146,7 +211,53 @@ SCENARIOS = [
         "vitals": {"gcs": 12}
     }, 2),
     
-    # ===== LEVEL 3 - URGENT =====
+    # Arabic - High Risk
+    ("Arabic - ألم صدر شديد", {
+        "age": 60, "gender": "male",
+        "chief_complaint_text": "صدري بيوجعني جامد حاسس بضغط",
+        "vitals": {"pain_score": 8}
+    }, 2),
+    
+    ("Arabic - مش عارف آخد نفسي", {
+        "age": 40, "gender": "female",
+        "chief_complaint_text": "مش عارفة آخد نفسي مخنوقة",
+        "vitals": {}
+    }, 2),
+    
+    ("Arabic - جلطة", {
+        "age": 65, "gender": "male",
+        "chief_complaint_text": "وشه مايل ومش قادر يتكلم",
+        "vitals": {}
+    }, 2),
+    
+    ("Arabic - عايز يموت", {
+        "age": 22, "gender": "male",
+        "chief_complaint_text": "عايز اموت مش عايز اعيش",
+        "vitals": {}
+    }, 2),
+    
+    ("Arabic - حامل وبتنزف", {
+        "age": 28, "gender": "female",
+        "chief_complaint_text": "انا حامل وبنزف",
+        "vitals": {}
+    }, 2),
+    
+    ("Arabic - السكر واطي", {
+        "age": 55, "gender": "male",
+        "chief_complaint_text": "السكر واطي وبيرعش",
+        "vitals": {}
+    }, 2),
+    
+    ("Arabic - قلبي بيدق جامد", {
+        "age": 45, "gender": "female",
+        "chief_complaint_text": "قلبي بيدق جامد وحاسة بدوخة",
+        "vitals": {}
+    }, 2),
+    
+    # ========================================
+    # LEVEL 3 - URGENT (عاجل)
+    # ========================================
+    
     ("Abdominal pain with fever", {
         "age": 35, "gender": "female",
         "chief_complaint_text": "stomach pain and fever for 2 days",
@@ -159,7 +270,23 @@ SCENARIOS = [
         "vitals": {"pain_score": 5}
     }, 3),
     
-    # ===== LEVEL 4 - LESS URGENT =====
+    # Arabic - Urgent
+    ("Arabic - وجع بطن ومغص", {
+        "age": 30, "gender": "female",
+        "chief_complaint_text": "بطني بتوجعني ومغص شديد",
+        "vitals": {}
+    }, 3),
+    
+    ("Arabic - وقعت وايدي وارمة", {
+        "age": 40, "gender": "male",
+        "chief_complaint_text": "وقعت من السلم وايدي وارمة",
+        "vitals": {}
+    }, 3),
+    
+    # ========================================
+    # LEVEL 4 - LESS URGENT (أقل إلحاحاً)
+    # ========================================
+    
     ("Simple laceration", {
         "age": 30, "gender": "male",
         "chief_complaint_text": "cut on hand, needs stitches",
@@ -172,7 +299,23 @@ SCENARIOS = [
         "vitals": {"temp": 38.2}
     }, 4),
     
-    # ===== LEVEL 5 - NON-URGENT =====
+    # Arabic - Less Urgent
+    ("Arabic - جرح محتاج غرز", {
+        "age": 35, "gender": "male",
+        "chief_complaint_text": "ايدي اتقطعت محتاج غرز",
+        "vitals": {}
+    }, 4),
+    
+    ("Arabic - سخونية", {
+        "age": 20, "gender": "female",
+        "chief_complaint_text": "عندي سخونية وزوري بيوجعني",
+        "vitals": {}
+    }, 4),
+    
+    # ========================================
+    # LEVEL 5 - NON-URGENT (غير عاجل)
+    # ========================================
+    
     ("Prescription refill", {
         "age": 45, "gender": "male",
         "chief_complaint_text": "need refill of blood pressure medication",
@@ -185,29 +328,23 @@ SCENARIOS = [
         "vitals": {}
     }, 5),
     
-    # ===== ARABIC SCENARIOS =====
-    ("Arabic - Unconscious (فاقد الوعي)", {
+    # Arabic - Non-Urgent
+    ("Arabic - عايز روشتة", {
         "age": 50, "gender": "male",
-        "chief_complaint_text": "فاقد الوعي مش بيرد",
+        "chief_complaint_text": "عايز اجدد روشتة الضغط",
         "vitals": {}
-    }, 1),
+    }, 5),
     
-    ("Arabic - Chest pain (ألم صدر)", {
-        "age": 60, "gender": "male",
-        "chief_complaint_text": "ألم شديد في صدري",
-        "vitals": {"pain_score": 8}
-    }, 2),
-    
-    ("Arabic - Can't breathe (مش عارف آخد نفسي)", {
-        "age": 40, "gender": "female",
-        "chief_complaint_text": "مش عارفة آخد نفسي",
+    ("Arabic - برد خفيف", {
+        "age": 25, "gender": "female",
+        "chief_complaint_text": "عندي برد خفيف ورشح",
         "vitals": {}
-    }, 2),
+    }, 5),
 ]
 
 def run_tests():
     print("=" * 70)
-    print("SAFE-Triage AI - Scenario Testing")
+    print("SAFE-Triage AI - Scenario Testing (اختبار السيناريوهات)")
     print("=" * 70)
     
     passed = 0
@@ -263,10 +400,11 @@ def run_tests():
     # Summary
     print("=" * 70)
     print(f"RESULTS: {passed} passed, {failed} failed out of {len(SCENARIOS)} tests")
+    print(f"النتائج: {passed} نجح، {failed} فشل من {len(SCENARIOS)} اختبار")
     print("=" * 70)
     
     if failures:
-        print("\n❌ FAILED SCENARIOS:")
+        print("\n❌ FAILED SCENARIOS (السيناريوهات الفاشلة):")
         for f in failures:
             print(f"\n  {f['description']}")
             print(f"    Complaint: {f['complaint']}")
