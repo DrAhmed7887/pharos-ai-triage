@@ -12,7 +12,7 @@ else:
 class MedASRService:
     def __init__(self):
         self.available = True
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        self.model = genai.GenerativeModel('gemini-3-flash-preview')
         print("[Gemini] Transcription service ready")
     
     def transcribe(self, audio_path: str) -> dict:
