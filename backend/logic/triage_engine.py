@@ -77,23 +77,23 @@ class TriageEngine:
         """
         resources = 0
         
-        if "abdominal" in symptoms or "fever" in symptoms:
-            resources += 1
+        if "abdominal" in symptoms:
+            resources += 2  # Labs + possible imaging
         
         if "chest_pain" in symptoms or "sob" in symptoms:
-            resources += 2
+            resources += 2  # ECG + Labs/CXR
             
-        if "trauma" in symptoms or "neuro" in symptoms:
-            resources += 1
+        if "trauma" in symptoms:
+            resources += 2  # X-ray + possible labs
             
-        if "abdominal" in symptoms:
-            resources += 1
+        if "fever" in symptoms:
+            resources += 1  # Labs
+            
+        if "laceration" in symptoms:
+            resources += 1  # Suture supplies
 
         if "allergy" in symptoms:
-            resources += 1
-
-        if patient.vitals.temp and patient.vitals.temp > 38.0:
-            resources += 1
+            resources += 1  # IV/IM Meds
             
         return resources
 
@@ -158,7 +158,6 @@ class TriageEngine:
         high_risk_triggers = []
         if "chest_pain" in symptoms: high_risk_triggers.append("Chest Pain")
         if "stroke" in symptoms: high_risk_triggers.append("Stroke Symptoms")
-        if "neuro" in symptoms: high_risk_triggers.append("Neurological")
         if "psych" in symptoms: high_risk_triggers.append("Psychiatric Emergency")
         if "sob" in symptoms: high_risk_triggers.append("Shortness of Breath")
         

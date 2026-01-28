@@ -6,36 +6,53 @@ class NLPProcessor:
         # Arabic and English keywords mapping to clinical concepts
         self.concepts = {
             "chest_pain": [
-                "chest pain", "pain in chest", "tightness", "pressure", "angina",
-                "ألم صدر", "وجع في صدري", "نغزة", "طبقة على صدري", "ذبحة", "حرقان في الصدر"
+                "chest pain", "pain in chest", "tightness in chest", "chest tightness",
+                "angina", "heart pain",
+                "ألم صدر", "وجع في صدري", "نغزة في صدري", "طبقة على صدري", "ذبحة", "حرقان في الصدر"
             ],
             "sob": [
-                "short of breath", "cant breathe", "can't breathe", "difficulty breathing", "dyspnea", "gasping",
-                "ضيق تنفس", "مش عارف آخد نفسي", "كرشة نفس", "مخنوق", "نهجان"
+                "short of breath", "shortness of breath", "cant breathe", "can't breathe", 
+                "difficulty breathing", "dyspnea", "gasping", "breathless",
+                "ضيق تنفس", "مش عارف آخد نفسي", "مش عارفة آخد نفسي", "كرشة نفس", "مخنوق", "نهجان", "مش قادر اتنفس"
+            ],
+            "stroke": [
+                "stroke", "face droop", "face drooping", "facial droop", "arm weakness", 
+                "leg weakness", "slurred speech", "speech difficulty", "can't speak",
+                "one side weak", "hemiparesis", "hemiplegia",
+                "جلطة", "شلل", "وشي مايل", "مش قادر اتكلم"
             ],
             "trauma": [
-                "fall", "hit", "accident", "crash", "fracture", "broken", "cut", "wound",
-                "سقوط", "وقعت", "خبطت", "حادث", "كسر", "جرح", "نزيف", "تعويرة"
+                "fall", "fell", "hit", "accident", "crash", "fracture", "broken", 
+                "wound", "injury", "swollen", "sprain",
+                "سقوط", "وقعت", "خبطت", "حادث", "كسر", "نزيف", "تعويرة", "ورم"
             ],
             "abdominal": [
-                "stomach pain", "abdominal pain", "belly ache", "vomiting", "diarrhea",
+                "stomach pain", "abdominal pain", "belly ache", "belly pain",
+                "vomiting", "diarrhea", "nausea",
                 "وجع بطن", "مغص", "قيء", "ترجيع", "إسهال", "ألم في معدتي"
             ],
             "neuro": [
-                "dizzy", "faint", "passed out", "seizure", "stroke", "numbness", "weakness",
-                "دوخة", "إغماء", "تشنجات", "جلطة", "تنميل", "ضعف", "صداع شديد"
+                "dizzy", "dizziness", "faint", "passed out", "seizure", 
+                "numbness", "tingling", "weakness", "headache", "severe headache",
+                "دوخة", "إغماء", "تشنجات", "تنميل", "ضعف", "صداع شديد"
             ],
             "fever": [
-                "fever", "hot", "temperature", "chills", "shivering",
+                "fever", "febrile", "temperature", "chills", "shivering",
                 "حرارة", "سخونية", "رعشة", "حمى"
             ],
             "psych": [
-                "suicidal", "kill myself", "hopeless", "voices", "hallucination", "aggressive",
+                "suicidal", "kill myself", "hopeless", "voices", "hallucination", 
+                "aggressive", "self harm", "want to die",
                 "انتحار", "هاقتل نفسي", "أصوات", "هلاوس", "عدواني", "مجنون"
             ],
             "allergy": [
-                "allergy", "allergic", "rash", "hives", "swelling", "peanut", "bee",
-                "حساسية", "طفح", "تورم", "حبوب", "قرصة", "نحل"
+                "allergy", "allergic", "rash", "hives", "swelling face", 
+                "swelling lips", "peanut", "bee sting",
+                "حساسية", "طفح", "تورم", "حبوب", "قرصة نحل"
+            ],
+            "laceration": [
+                "cut", "laceration", "wound", "bleeding", "stitches",
+                "جرح", "قطع", "نزيف"
             ]
         }
         
@@ -46,12 +63,13 @@ class NLPProcessor:
         """
         Analyze text and return a list of identified symptom keys.
         """
-        text = text.lower()
+        text_lower = text.lower()
         detected = []
         
         for category, keywords in self.concepts.items():
             for kw in keywords:
-                if re.search(r'\b' + re.escape(kw), text):
+                # Use word boundary for English, direct search for Arabic
+                if re.search(r'\b' + re.escape(kw.lower()) + r'\b', text_lower) or kw in text:
                     detected.append(category)
                     break
         
@@ -75,9 +93,9 @@ class NLPProcessor:
         ]
         
         matches = []
-        text = text.lower()
+        text_lower = text.lower()
         for term in danger_terms:
-            if re.search(r'\b' + re.escape(term), text):
+            if re.search(r'\b' + re.escape(term.lower()) + r'\b', text_lower) or term in text:
                 matches.append(term)
                 
         return matches
