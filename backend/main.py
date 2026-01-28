@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from typing import List
 import tempfile
 import os
+import requests
+from datetime import datetime
 
 from .models import PatientInput, TriageResult
 from .logic.triage_engine import TriageEngine
@@ -30,13 +32,37 @@ app.add_middleware(
 engine_logic = TriageEngine()
 ai_service = AIService()
 
+# ============ TELEGRAM ALERT FUNCTION ============
+def send_critical_alert(patient_data: dict, level: int):
+    """Send Telegram alert for critical patients (Level 1 or 2) via n8n"""
+    if level <= 2:
+        try:
+            vitals = patient_data.get("vitals", {})
+            payload = {
+                "patient_name": f"Patient-{patient_data.get('age', 'Unknown')}",
+                "age": patient_data.get("age", "N/A"),
+                "triage_level": level,
+                "heart_rate": vitals.get("hr", "N/A"),
+                "bp": f"{vitals.get('sbp', 'N/A')}/{vitals.get('dbp', 'N/A')}",
+                "chief_complaint": patient_data.get("chief_complaint_text", "")[:100],
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            response = requests.post(
+                "https://drahmedzayed.app.n8n.cloud/webhook/critical-alert",
+                json=payload,
+                timeout=5
+            )
+            print(f"[ALERT] Critical patient alert sent to Telegram: {response.status_code}")
+        except Exception as e:
+            print(f"[ALERT] Failed to send alert: {e}")
+
 @app.get("/")
 def read_root():
-    return {"message": "SAFE-Triage AI System Active", "version": "2.0.0", "features": ["MedASR Voice", "AI Triage", "ESI v5"]}
+    return {"message": "SAFE-Triage AI System Active", "version": "2.0.0", "features": ["Voice Input", "AI Triage", "ESI v5", "Telegram Alerts"]}
 
 @app.post("/transcribe")
 async def transcribe_audio(audio: UploadFile = File(...)):
-    """🎤 MedASR: Convert voice to medical text"""
+    """🎤 Voice Input: Convert speech to medical text via Gemini"""
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
             content = await audio.read()
@@ -57,6 +83,8 @@ async def transcribe_audio(audio: UploadFile = File(...)):
 def triage_patient(patient: PatientInput, db: Session = Depends(get_db)):
     try:
         result = engine_logic.evaluate(patient)
+        # Send alert for critical patients
+        send_critical_alert(patient.model_dump(), result.level)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -68,6 +96,8 @@ def ai_triage_patient(patient: PatientInput, db: Session = Depends(get_db)):
         
         if "error" in ai_result:
              std_result = engine_logic.evaluate(patient)
+             # Send alert for critical patients
+             send_critical_alert(patient.model_dump(), std_result.level)
              return {
                  "level": std_result.level,
                  "color_code": std_result.color_code,
@@ -82,6 +112,9 @@ def ai_triage_patient(patient: PatientInput, db: Session = Depends(get_db)):
         colors = {1:"#ef4444", 2:"#f97316", 3:"#eab308", 4:"#22c55e", 5:"#3b82f6"}
         labels_en = {1:"Resuscitation", 2:"Emergent", 3:"Urgent", 4:"Less Urgent", 5:"Non-Urgent"}
         labels_ar = {1:"إنعاش", 2:"طوارئ", 3:"عاجل", 4:"أقل إلحاحاً", 5:"غير عاجل"}
+
+        # Send alert for critical patients (Level 1 or 2)
+        send_critical_alert(patient.model_dump(), level)
 
         return {
             "level": level,
