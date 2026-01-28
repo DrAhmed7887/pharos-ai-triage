@@ -10,7 +10,7 @@ class NLPProcessor:
                 "ألم صدر", "وجع في صدري", "نغزة", "طبقة على صدري", "ذبحة", "حرقان في الصدر"
             ],
             "sob": [
-                "short of breath", "cant breathe", "difficulty breathing", "dyspnea", "gasping",
+                "short of breath", "cant breathe", "can't breathe", "difficulty breathing", "dyspnea", "gasping",
                 "ضيق تنفس", "مش عارف آخد نفسي", "كرشة نفس", "مخنوق", "نهجان"
             ],
             "trauma": [
@@ -22,7 +22,7 @@ class NLPProcessor:
                 "وجع بطن", "مغص", "قيء", "ترجيع", "إسهال", "ألم في معدتي"
             ],
             "neuro": [
-                "dindsy", "faint", "passed out", "seizure", "stroke", "numbness", "weakness",
+                "dizzy", "faint", "passed out", "seizure", "stroke", "numbness", "weakness",
                 "دوخة", "إغماء", "تشنجات", "جلطة", "تنميل", "ضعف", "صداع شديد"
             ],
             "fever": [
@@ -51,8 +51,6 @@ class NLPProcessor:
         
         for category, keywords in self.concepts.items():
             for kw in keywords:
-                # Use regex with word boundary at the start to avoid partial matches
-                # e.g. "instability" should not match "stab"
                 if re.search(r'\b' + re.escape(kw), text):
                     detected.append(category)
                     break
@@ -64,8 +62,16 @@ class NLPProcessor:
         Specific check for Life-Threatening keywords (Level 1).
         """
         danger_terms = [
-            "cardiac arrest", "unresponsive", "blue", "not breathing", "gunshot", "stab",
-            "توقف القلب", "غير مستجيب", "أزرق", "قاطع نفس", "رصاص", "طعن", "سكينة"
+            # English - Critical/Life-threatening
+            "cardiac arrest", "unresponsive", "unconscious", "not conscious", 
+            "blue", "cyanotic", "not breathing", "stopped breathing", "apnea",
+            "gunshot", "stab", "choking", "drowning", "hanging", "overdose",
+            "seizure", "fitting", "convulsion", "anaphylaxis", "severe bleeding",
+            "pulseless", "no pulse", "collapsed", "found down",
+            # Arabic - Critical
+            "توقف القلب", "غير مستجيب", "فاقد الوعي", "مغمى عليه", "إغماء",
+            "أزرق", "قاطع نفس", "مش بيتنفس", "رصاص", "طعن", "سكينة",
+            "تشنج", "شرقان", "غرق", "جرعة زيادة", "نزيف شديد"
         ]
         
         matches = []

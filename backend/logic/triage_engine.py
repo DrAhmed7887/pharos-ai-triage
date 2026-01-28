@@ -6,57 +6,94 @@ class TriageEngine:
     def __init__(self):
         self.nlp = NLPProcessor()
         
-    def _check_vitals_danger_zone(self, age: int, vitals: Vitals) -> bool:
+    def _check_critical_vitals(self, vitals: Vitals) -> Tuple[bool, List[str]]:
+        """
+        Check for immediately life-threatening vital signs (Level 1).
+        Returns (is_critical, list of reasons)
+        """
+        reasons = []
+        
+        # Respiratory Rate - Critical
+        if vitals.rr is not None:
+            if vitals.rr < 8:
+                reasons.append(f"Critical: RR {vitals.rr} (< 8 = respiratory failure)")
+            elif vitals.rr > 36:
+                reasons.append(f"Critical: RR {vitals.rr} (> 36 = severe respiratory distress)")
+        
+        # Heart Rate - Critical
+        if vitals.hr is not None:
+            if vitals.hr < 40:
+                reasons.append(f"Critical: HR {vitals.hr} (< 40 = severe bradycardia)")
+            elif vitals.hr > 150:
+                reasons.append(f"Critical: HR {vitals.hr} (> 150 = unstable tachycardia)")
+        
+        # SpO2 - Critical
+        if vitals.spo2 is not None and vitals.spo2 < 90:
+            reasons.append(f"Critical: SpO2 {vitals.spo2}% (< 90% = severe hypoxia)")
+        
+        # GCS - Critical
+        if vitals.gcs is not None and vitals.gcs < 9:
+            reasons.append(f"Critical: GCS {vitals.gcs} (< 9 = comatose)")
+        
+        # Blood Pressure - Critical
+        if vitals.sbp is not None:
+            if vitals.sbp < 80:
+                reasons.append(f"Critical: SBP {vitals.sbp} (< 80 = shock)")
+            elif vitals.sbp > 220:
+                reasons.append(f"Critical: SBP {vitals.sbp} (> 220 = hypertensive emergency)")
+        
+        return (len(reasons) > 0, reasons)
+        
+    def _check_vitals_danger_zone(self, age: int, vitals: Vitals) -> Tuple[bool, List[str]]:
         """
         Check if vitals are in the danger zone based on age (ESI v5 Table).
-        Returns True if upgrading to Level 2 is recommended.
+        Returns (is_danger, list of reasons) for Level 2.
         """
+        reasons = []
         hr = vitals.hr
         rr = vitals.rr
         spo2 = vitals.spo2
         
-        if not hr or not rr or not spo2:
-            return False
-
-        # Pediatric Adjustments (Simplified for MVP based on ESI table)
-        if age < 3/12: # < 3 months
-             if hr > 180 or rr > 50 or spo2 < 92: return True
-        elif age < 3: # 3 months to 3 years
-             if hr > 160 or rr > 40 or spo2 < 92: return True
-        elif age < 8: # 3-8 years
-             if hr > 140 or rr > 30 or spo2 < 92: return True
-        else: # > 8 years and adults
-             if hr > 100 or rr > 20 or spo2 < 92: return True
+        # Adults
+        if age >= 8:
+            if hr and (hr > 100 or hr < 50):
+                reasons.append(f"Abnormal HR: {hr}")
+            if rr and (rr > 20 or rr < 10):
+                reasons.append(f"Abnormal RR: {rr}")
+            if spo2 and spo2 < 94:
+                reasons.append(f"Low SpO2: {spo2}%")
+        # Pediatric (simplified)
+        elif age < 3:
+            if hr and hr > 160:
+                reasons.append(f"Pediatric tachycardia: HR {hr}")
+            if rr and rr > 40:
+                reasons.append(f"Pediatric tachypnea: RR {rr}")
         
-        return False
+        return (len(reasons) > 0, reasons)
 
     def _calculate_resources(self, patient: PatientInput, symptoms: List[str]) -> int:
         """
         Estimate resources needed based on complaint and vitals.
-        Resources: Labs, ECG, X-Ray, CT/MRI, IV Fluids, IV Meds, Consult.
-        Not Resources: History, Exam, PO Meds, Tetanus, Refill.
         """
         resources = 0
         
-        # Symptom-based resource prediction
         if "abdominal" in symptoms or "fever" in symptoms:
-            resources += 1 # Likely labs
+            resources += 1
         
         if "chest_pain" in symptoms or "sob" in symptoms:
-            resources += 2 # ECG + Labs/CXR
+            resources += 2
             
         if "trauma" in symptoms or "neuro" in symptoms:
-            resources += 1 # Imaging (X-ray/CT)
+            resources += 1
             
-        if "abdominal" in symptoms: # Vomiting/Diarrhea implied
-            resources += 1 # IV fluids potential
+        if "abdominal" in symptoms:
+            resources += 1
 
         if "allergy" in symptoms:
-            resources += 1 # IV/IM Meds (Benadryl/Epi/Steroids)
+            resources += 1
 
         if patient.vitals.temp and patient.vitals.temp > 38.0:
-            if "fever" not in symptoms: # Don't double count if fever already triggered labs
-                 resources += 1 # Workup
+            resources += 1
             
         return resources
 
@@ -69,24 +106,25 @@ class TriageEngine:
         danger_keywords = self.nlp.detect_danger_keywords(patient.chief_complaint_text)
         
         # --- Decision Point A: Resuscitation (Level 1) ---
-        # Immediate life-saving intervention required?
         is_level_1 = False
-        if patient.vitals.spo2 and patient.vitals.spo2 < 90:
-            is_level_1 = True
-            reasoning.append("SpO2 < 90% indicates severe hypoxia.")
         
-        if patient.vitals.gcs and patient.vitals.gcs < 9: # Unresponsive
+        # Check critical vital signs FIRST
+        vitals_critical, vitals_reasons = self._check_critical_vitals(patient.vitals)
+        if vitals_critical:
             is_level_1 = True
-            reasoning.append("GCS < 9 indicates severe altered mental status.")
+            reasoning.extend(vitals_reasons)
+            red_flags.extend(vitals_reasons)
 
+        # Check danger keywords (unconscious, unresponsive, etc.)
         if danger_keywords:
             is_level_1 = True
-            reasoning.append(f"Critical keywords detected: {', '.join(danger_keywords)}")
+            reasoning.append(f"Critical keywords: {', '.join(danger_keywords)}")
+            red_flags.append(f"Critical: {', '.join(danger_keywords)}")
 
         if is_level_1:
             return TriageResult(
                 level=TriageLevel.RESUSCITATION,
-                color_code="#ef4444", # Red
+                color_code="#ef4444",
                 label_ar="إنعاش (مستوى ١)",
                 label_en="Resuscitation (Level 1)",
                 description="Requires immediate life-saving intervention.",
@@ -97,52 +135,41 @@ class TriageEngine:
             )
 
         # --- Decision Point B: Emergent (Level 2) ---
-        # High risk, confused, lethargic, severe pain/distress
         is_level_2 = False
         
-        # Pain
-        if patient.vitals.pain_score >= 7:
+        # Severe Pain
+        if patient.vitals.pain_score and patient.vitals.pain_score >= 7:
             is_level_2 = True
-            reasoning.append("Severe pain score reported (>=7).")
+            reasoning.append(f"Severe pain: {patient.vitals.pain_score}/10")
             
-        # Confusion
-        if patient.vitals.gcs and patient.vitals.gcs < 15:
+        # Altered mental status (GCS 9-14)
+        if patient.vitals.gcs and 9 <= patient.vitals.gcs < 15:
             is_level_2 = True
-            reasoning.append("Altered mental status (GCS < 15).")
+            reasoning.append(f"Altered mental status: GCS {patient.vitals.gcs}")
             
-        # Danger Zone Vitals
-        if self._check_vitals_danger_zone(patient.age, patient.vitals):
+        # Danger Zone Vitals (not critical but concerning)
+        danger_zone, danger_reasons = self._check_vitals_danger_zone(patient.age, patient.vitals)
+        if danger_zone:
             is_level_2 = True
-            reasoning.append("Vital signs in danger zone for age.")
+            reasoning.extend(danger_reasons)
             red_flags.append("Abnormal Vital Signs")
             
         # High Risk Symptoms
-        # Dynamic check to provide specific reasoning
         high_risk_triggers = []
         if "chest_pain" in symptoms: high_risk_triggers.append("Chest Pain")
         if "stroke" in symptoms: high_risk_triggers.append("Stroke Symptoms")
-        if "neuro" in symptoms: high_risk_triggers.append("Neurological Deficit")
+        if "neuro" in symptoms: high_risk_triggers.append("Neurological")
         if "psych" in symptoms: high_risk_triggers.append("Psychiatric Emergency")
+        if "sob" in symptoms: high_risk_triggers.append("Shortness of Breath")
         
         if high_risk_triggers:
-             is_level_2 = True
-             reasoning.append(f"High-risk symptom(s) detected: {', '.join(high_risk_triggers)}")
-
-        # Allergy Check
-        if "allergy" in symptoms:
-            # If respiratory distress or shock was found, Level 1 would already trigger above via keywords/vitals
-            reasoning.append("Allergic reaction flagged - monitoring for anaphylaxis risk.")
-            if not is_level_1 and (patient.vitals.rr and patient.vitals.rr > 22):
-                 is_level_2 = True
-                 reasoning.append("Allergy with elevated RR indicates potential airway compromise.")
-            # If just stable allergy, might be Level 3 (meds) or 4.
-            # ESI usually treats significant allergic reactions as Level 2/3. 
-            # We'll default to checking resources later if stable, but flag it here.
+            is_level_2 = True
+            reasoning.append(f"High-risk: {', '.join(high_risk_triggers)}")
 
         if is_level_2:
             return TriageResult(
                 level=TriageLevel.EMERGENT,
-                color_code="#f97316", # Orange
+                color_code="#f97316",
                 label_ar="طوارئ (مستوى ٢)",
                 label_en="Emergent (Level 2)",
                 description="High risk, potential for rapid deterioration.",
@@ -155,41 +182,36 @@ class TriageEngine:
         # --- Decision Point C: Resources (Level 3, 4, 5) ---
         resource_count = self._calculate_resources(patient, symptoms)
         
-        # Vital sign check for Level 3 (if danger zone, already moved to 2)
-        # But if vitals are dangerous, we already caught it.
-        # If vitals are just 'abnormal' but not dangerous? ESI usually up-triage to 2 if danger zone.
-        
         if resource_count >= 2:
-            # Check vitals again just in case (Danger zone) - Done above.
             return TriageResult(
                 level=TriageLevel.URGENT,
-                color_code="#eab308", # Yellow
+                color_code="#eab308",
                 label_ar="عاجل (مستوى ٣)",
                 label_en="Urgent (Level 3)",
                 description="Stable, requires multiple resources.",
                 recommended_action="Room patient, order labs/imaging.",
                 time_to_physician="< 60 mins",
                 red_flags=red_flags,
-                reasoning=[f"Predicted {resource_count} resources needed (Labs, Imaging, etc)."]  
+                reasoning=[f"Estimated {resource_count} resources needed."]  
             )
             
         elif resource_count == 1:
             return TriageResult(
                 level=TriageLevel.LESS_URGENT,
-                color_code="#22c55e", # Green
+                color_code="#22c55e",
                 label_ar="أقل إلحاحاً (مستوى ٤)",
                 label_en="Less Urgent (Level 4)",
                 description="Stable, requires one resource.",
                 recommended_action="Fast track or clinic area.",
                 time_to_physician="Can wait",
                 red_flags=red_flags,
-                reasoning=["Predicted only 1 resource needed."]
+                reasoning=["Estimated 1 resource needed."]
             )
             
-        else: # 0 resources
+        else:
             return TriageResult(
                 level=TriageLevel.NON_URGENT,
-                color_code="#3b82f6", # Blue
+                color_code="#3b82f6",
                 label_ar="غير عاجل (مستوى ٥)",
                 label_en="Non-Urgent (Level 5)",
                 description="No resources needed.",
